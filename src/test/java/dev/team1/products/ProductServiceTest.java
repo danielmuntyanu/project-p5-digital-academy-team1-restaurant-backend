@@ -20,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import dev.team1.enums.ProductCategory;
 import dev.team1.products.dtos.ProductDTOResponse;
 
 @ExtendWith (MockitoExtension.class)
@@ -80,6 +81,30 @@ public class ProductServiceTest {
         assertThat(pageDTO.getContent().get(1).available(), is(equalTo(true)));
         assertThat(pageDTO.getContent().get(2).name(), is(equalTo("Java Roll")));
         assertThat(pageDTO.getContent().get(5), is(equalTo(mockPageDTO.getContent().get(5))));
+    }
+
+    @Test 
+    void testGetByCategory() {
+        List<ProductEntity> availableEntities = sampleEntities.stream()
+            .filter(p -> p.isAvailable() && p.getCategory() == ProductCategory.POSTRES)
+            .collect(Collectors.toList());
+        
+        List<ProductDTOResponse> availableDTOs = sampleDTOs.stream()
+            .filter(p -> p.available() && p.category() == ProductCategory.POSTRES)
+            .collect(Collectors.toList());
+    
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<ProductEntity> mockPage = new PageImpl<>(availableEntities, pageable, availableEntities.size());
+        Page<ProductDTOResponse> mockPageDTO = new PageImpl<>(availableDTOs, pageable, availableDTOs.size());
+
+        when(repository.findByCategory(ProductCategory.POSTRES, pageable)).thenReturn(mockPage);
+        Page<ProductDTOResponse> pageDTO = service.getByCategory(ProductCategory.POSTRES, pageable);
+
+        assertThat(pageDTO.getTotalElements(), is(equalTo(2L)));
+        assertThat(pageDTO.getContent().get(0).available(), is(equalTo(true)));
+        assertThat(pageDTO.getContent().get(1).available(), is(equalTo(true)));
+        assertThat(pageDTO.getContent().get(0).name(), is(equalTo("Mochi Python")));
+        assertThat(pageDTO.getContent().get(1), is(equalTo(mockPageDTO.getContent().get(1))));
     }
 
 }
