@@ -62,8 +62,13 @@ public class ProductControllerTest {
         List<ProductDTOResponse> mockContent = mockProducts.stream()
             .filter(p -> p.available())
             .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), mockContent.size());
+
+        List<ProductDTOResponse> mockPageContent = mockContent.subList(start, end);
         
-        Page<ProductDTOResponse> mockPage = new PageImpl<>(mockContent, pageable, mockContent.size());
+        Page<ProductDTOResponse> mockPage = new PageImpl<>(mockPageContent, pageable, mockContent.size());
         String json = mapper.writeValueAsString(mockPage);
 
         when(service.getAllAvailable(pageable)).thenReturn(mockPage);
@@ -80,7 +85,7 @@ public class ProductControllerTest {
         );
 
         assertThat(response.getContentAsString(), is(equalTo(json)));
-        assertThat(respContent, is(equalTo(mockContent)));
+        assertThat(respContent, is(equalTo(mockPageContent)));
         assertThat(response.getStatus(), is(equalTo(HttpStatus.OK.value())));
         assertThat(tree.get("totalPages").asInt(), is(equalTo(1)));
         assertThat(respContent.size(), is(equalTo(7)));
@@ -130,19 +135,37 @@ public class ProductControllerTest {
 
     @Test 
     void testIndex_shouldReturnAllProducts() throws Exception {
+        Pageable pageable = PageRequest.of(0, 20);
 
-        // создаем мок ответа объектом
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), mockProducts.size());
 
-        // конвертируем в мок ответ json
+        List<ProductDTOResponse> mockPageContent = mockProducts.subList(start, end);
+        
+        Page<ProductDTOResponse> mockPage = new PageImpl<>(mockPageContent, pageable, mockProducts.size());
+        String json = mapper.writeValueAsString(mockPage);
 
-        // подменяем ответ от service нашим mock-объектом
+        when(service.getAll(pageable)).thenReturn(mockPage);
+        // TODO: For ROLE_ADMIN only check
+        MockHttpServletResponse response = mockMvc.perform(get("/api/v1/products/administration"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse();
 
-        // Имитируем запрос
+        JsonNode tree = mapper.readTree(response.getContentAsString());
 
-        // конвертируем ответ в объект 
+        List<ProductDTOResponse> respContent = mapper.convertValue(
+            tree.get("content"),
+            new TypeReference<List<ProductDTOResponse>>() {}
+        );
 
-        // сравниваем и проверяем
-
+        assertThat(response.getContentAsString(), is(equalTo(json)));
+        assertThat(respContent, is(equalTo(mockProducts)));
+        assertThat(response.getStatus(), is(equalTo(HttpStatus.OK.value())));
+        assertThat(tree.get("totalPages").asInt(), is(equalTo(1)));
+        assertThat(respContent.size(), is(equalTo(8)));
+        assertThat(respContent.get(1).name(), is(equalTo("Baked Python")));
+        assertThat(respContent.get(1).available(), is(equalTo(false)));
     }
 
     @Test 
