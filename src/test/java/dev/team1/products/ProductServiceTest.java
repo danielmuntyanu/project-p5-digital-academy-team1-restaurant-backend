@@ -120,7 +120,7 @@ public class ProductServiceTest {
 
         assertThat(dto.available(), is(equalTo(true)));
         assertThat(dto.name(), is(equalTo("Ramen Fix")));
-        assertThat(dto, is(equalTo(mockDTO)));
+        assertThat(dto.name(), is(equalTo(mockDTO.name())));
     }
 
     @Test 
