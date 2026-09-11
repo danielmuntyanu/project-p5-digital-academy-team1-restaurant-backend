@@ -3,6 +3,7 @@ package dev.team1.products;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -23,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import dev.team1.enums.ProductCategory;
 import dev.team1.products.dtos.ProductDTOResponse;
+import dev.team1.products.exceptions.ProductExceptionNotFound;
 
 @ExtendWith (MockitoExtension.class)
 public class ProductServiceTest {
@@ -119,6 +121,22 @@ public class ProductServiceTest {
         assertThat(dto.available(), is(equalTo(true)));
         assertThat(dto.name(), is(equalTo("Ramen Fix")));
         assertThat(dto, is(equalTo(mockDTO)));
+    }
+
+    @Test 
+    void testGetByIdNotFound() {
+        Long missingId = 500L;
+        when(repository.findById(missingId)).thenReturn(Optional.empty());
+
+        ProductExceptionNotFound exc = assertThrows(
+            ProductExceptionNotFound.class, 
+            () -> service.getById(missingId)
+        );
+
+        assertThat(exc.getMessage(), is(equalTo(
+            "Cannot find product with id " + missingId + " because it doesn't exist."
+        )));
+
     }
 
 }
