@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 import dev.team1.config.SecurityConfiguration;
 import dev.team1.contracts.IProductService;
+import dev.team1.enums.ProductCategory;
 import dev.team1.products.dtos.ProductDTOResponse;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
@@ -165,17 +166,41 @@ public class ProductControllerTest {
     @Test 
     void testIndex_shouldReturnCorrectCategory() throws Exception {
 
-        // создаем мок ответа объектом
+        Pageable pageable = PageRequest.of(0, 20);
+        
+        List<ProductDTOResponse> mockContent = mockProducts.stream()
+            .filter(p -> p.available() && p.category() == ProductCategory.POSTRES)
+            .collect(Collectors.toList());
+        
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), mockContent.size());
 
-        // конвертируем в мок ответ json
+        List<ProductDTOResponse> mockPageContent = mockContent.subList(start, end);
 
-        // подменяем ответ от service нашим mock-объектом
+        Page<ProductDTOResponse> mockPage = new PageImpl<>(mockPageContent, pageable, mockContent.size());
+        String json = mapper.writeValueAsString(mockPage);
 
-        // Имитируем запрос
+        when(service.getByCategory(ProductCategory.POSTRES, pageable)).thenReturn(mockPage);
+        MockHttpServletResponse response = mockMvc.perform(get("/api/v1/products")
+                .param("category", "POSTRES")
+                .accept(MediaType.ALL_VALUE))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse();
 
-        // конвертируем ответ в объект 
+        JsonNode tree = mapper.readTree(response.getContentAsString());
 
-        // сравниваем и проверяем
+        List<ProductDTOResponse> respContent = mapper.convertValue(
+            tree.get("content"),
+            new TypeReference<List<ProductDTOResponse>>() {}
+        );
+
+        assertThat(response.getContentAsString(), is(equalTo(json)));
+        assertThat(respContent, is(equalTo(mockPageContent)));
+        assertThat(response.getStatus(), is(equalTo(HttpStatus.OK.value())));
+        assertThat(tree.get("totalPages").asInt(), is(equalTo(1)));
+        assertThat(respContent.size(), is(equalTo(2)));
+        assertThat(respContent.get(0).name(), is(equalTo("Mochi Python")));
 
     }
 
