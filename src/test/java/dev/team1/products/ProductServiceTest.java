@@ -6,6 +6,8 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -44,6 +46,7 @@ public class ProductServiceTest {
     void testGetAll() {
         Pageable pageable = PageRequest.of(0, 20);
         Page<ProductEntity> mockPage = new PageImpl<>(sampleEntities, pageable, sampleEntities.size());
+        Page<ProductDTOResponse> mockPageDTO = new PageImpl<>(sampleDTOs, pageable, sampleDTOs.size());
 
         when(repository.findAll(pageable)).thenReturn(mockPage);
         Page<ProductDTOResponse> pageDTO = service.getAll(pageable);
@@ -52,6 +55,31 @@ public class ProductServiceTest {
         assertThat(pageDTO.getContent().get(0).available(), is(equalTo(true)));
         assertThat(pageDTO.getContent().get(1).available(), is(equalTo(false)));
         assertThat(pageDTO.getContent().get(3).name(), is(equalTo("Java Roll")));
+        assertThat(pageDTO.getContent().get(5), is(equalTo(mockPageDTO.getContent().get(5))));
+    }
+
+    @Test 
+    void testGetAllAvailable() {
+        List<ProductEntity> availableEntities = sampleEntities.stream()
+            .filter(p -> p.isAvailable())
+            .collect(Collectors.toList());
+        
+        List<ProductDTOResponse> availableDTOs = sampleDTOs.stream()
+            .filter(p -> p.available())
+            .collect(Collectors.toList());
+    
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<ProductEntity> mockPage = new PageImpl<>(availableEntities, pageable, availableEntities.size());
+        Page<ProductDTOResponse> mockPageDTO = new PageImpl<>(availableDTOs, pageable, availableDTOs.size());
+
+        when(repository.findByAvailableIsTrue(pageable)).thenReturn(mockPage);
+        Page<ProductDTOResponse> pageDTO = service.getAllAvailable(pageable);
+
+        assertThat(pageDTO.getTotalElements(), is(equalTo(7L)));
+        assertThat(pageDTO.getContent().get(0).available(), is(equalTo(true)));
+        assertThat(pageDTO.getContent().get(1).available(), is(equalTo(true)));
+        assertThat(pageDTO.getContent().get(2).name(), is(equalTo("Java Roll")));
+        assertThat(pageDTO.getContent().get(5), is(equalTo(mockPageDTO.getContent().get(5))));
     }
 
 }
