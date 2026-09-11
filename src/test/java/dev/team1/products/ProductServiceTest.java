@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -105,6 +106,19 @@ public class ProductServiceTest {
         assertThat(pageDTO.getContent().get(1).available(), is(equalTo(true)));
         assertThat(pageDTO.getContent().get(0).name(), is(equalTo("Mochi Python")));
         assertThat(pageDTO.getContent().get(1), is(equalTo(mockPageDTO.getContent().get(1))));
+    }
+
+    @Test 
+    void testGetById() {
+        ProductEntity mockItem = sampleEntities.get(0);
+        ProductDTOResponse mockDTO = sampleDTOs.get(0);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(mockItem));
+        ProductDTOResponse dto = service.getById(1L);
+
+        assertThat(dto.available(), is(equalTo(true)));
+        assertThat(dto.name(), is(equalTo("Ramen Fix")));
+        assertThat(dto, is(equalTo(mockDTO)));
     }
 
 }
