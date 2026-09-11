@@ -30,6 +30,7 @@ import dev.team1.config.SecurityConfiguration;
 import dev.team1.contracts.IProductService;
 import dev.team1.enums.ProductCategory;
 import dev.team1.products.dtos.ProductDTOResponse;
+import dev.team1.products.exceptions.ProductExceptionNotFound;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.JsonNode;
@@ -133,7 +134,7 @@ public class ProductControllerTest {
     }
 
     @Test 
-    void testIndex_shouldReturnAllProducts() throws Exception {
+    void testAdministration_shouldReturnAllProducts() throws Exception {
         Pageable pageable = PageRequest.of(0, 20);
 
         int start = (int) pageable.getOffset();
@@ -168,7 +169,7 @@ public class ProductControllerTest {
     }
 
     @Test 
-    void testIndex_shouldReturnProductById() throws Exception {
+    void testGetById_shouldReturnProductById() throws Exception {
 
         ProductDTOResponse mockItem = mockProducts.get(3);
         // Java Roll
@@ -192,6 +193,18 @@ public class ProductControllerTest {
         assertThat(respDTO.id(), is(equalTo(4L)));
         assertThat(respDTO.name(), is(equalTo("Java Roll")));
 
+    }
+
+    @Test
+    void testGetById_shouldReturn404NotFound() throws Exception {
+        Long missingId = 500L;
+        when(service.getById(missingId))
+            .thenThrow(new ProductExceptionNotFound(
+                "Cannot find product with id 500 because it doesn't exist."
+            ));
+
+        mockMvc.perform(get("/api/v1/products/{id}", missingId))
+            .andExpect(status().isNotFound());
     }
 
 
