@@ -171,17 +171,27 @@ public class ProductControllerTest {
     @Test 
     void testIndex_shouldReturnProductById() throws Exception {
 
-        // создаем мок ответа объектом
+        ProductDTOResponse mockItem = mockProducts.get(3);
+        // Java Roll
+        
+        String json = mapper.writeValueAsString(mockItem);
 
-        // конвертируем в мок ответ json
+        when(service.getById(4L)).thenReturn(mockItem);
+        MockHttpServletResponse response = mockMvc.perform(get("/api/v1/products/4"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse();
 
-        // подменяем ответ от service нашим mock-объектом
+        ProductDTOResponse respDTO = mapper.readValue(
+            response.getContentAsString(),
+            new TypeReference<ProductDTOResponse>() {}
+        );
 
-        // Имитируем запрос
-
-        // конвертируем ответ в объект 
-
-        // сравниваем и проверяем
+        assertThat(response.getContentAsString(), is(equalTo(json)));
+        assertThat(respDTO, is(equalTo(mockItem)));
+        assertThat(response.getStatus(), is(equalTo(HttpStatus.OK.value())));
+        assertThat(respDTO.id(), is(equalTo(4L)));
+        assertThat(respDTO.name(), is(equalTo("Java Roll")));
 
     }
 
@@ -226,24 +236,5 @@ public class ProductControllerTest {
         assertThat(respContent.get(0).name(), is(equalTo("Mochi Python")));
 
     }
-
-    @Test 
-    void testIndex_shouldReturnThrowWithIncorrectCategory() throws Exception {
-
-        // создаем мок ответа объектом
-
-        // конвертируем в мок ответ json
-
-        // подменяем ответ от service нашим mock-объектом
-
-        // Имитируем запрос
-
-        // конвертируем ответ в объект 
-
-        // сравниваем и проверяем
-
-    }
-
-    
 
 }
